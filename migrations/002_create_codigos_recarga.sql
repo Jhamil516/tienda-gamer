@@ -1,0 +1,25 @@
+-- Crear tabla para almacenar códigos de recargas
+CREATE TABLE IF NOT EXISTS codigos_recarga (
+  id_codigo int(11) NOT NULL AUTO_INCREMENT,
+  id_venta int(11) NOT NULL,
+  id_recarga int(11) NOT NULL,
+  id_usuario int(11) NOT NULL,
+  codigo varchar(50) NOT NULL UNIQUE,
+  tipo_recarga varchar(50) DEFAULT NULL,
+  monto decimal(10,2) DEFAULT NULL,
+  nombre_recarga varchar(150) DEFAULT NULL,
+  estado enum('disponible','canjeado','expirado') DEFAULT 'disponible',
+  fecha_generacion datetime DEFAULT current_timestamp(),
+  fecha_canjeado datetime DEFAULT NULL,
+  fecha_expiracion datetime DEFAULT NULL,
+  notas text DEFAULT NULL,
+  PRIMARY KEY (id_codigo),
+  UNIQUE KEY codigo (codigo),
+  KEY idx_venta (id_venta),
+  KEY idx_usuario (id_usuario),
+  KEY idx_recarga (id_recarga),
+  KEY idx_estado (estado),
+  FOREIGN KEY (id_venta) REFERENCES ventas(id_venta) ON DELETE CASCADE,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  FOREIGN KEY (id_recarga) REFERENCES recargas_digitales(id_recarga)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
