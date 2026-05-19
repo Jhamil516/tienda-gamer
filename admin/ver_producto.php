@@ -13,7 +13,7 @@ $producto = null;
 $imagenes = [];
 
 if ($id > 0) {
-    $producto = obtener_producto_por_id($conn, $id);
+    $producto = obtener_producto_por_id_admin($conn, $id);
     if ($producto) {
         $imagenes = obtener_imagenes_producto($conn, $id);
     }

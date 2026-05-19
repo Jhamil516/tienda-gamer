@@ -2,7 +2,7 @@
 require_once __DIR__ . '/header.php';
 
 $id = intval($_GET['id'] ?? 0);
-$producto = obtener_producto_por_id($conn, $id);
+$producto = obtener_producto_por_id_admin($conn, $id);
 $imagenes = $producto ? obtener_imagenes_producto($conn, $id) : [];
 
 if (!$producto) {
