@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/admin_header.php';
 
 if (!es_admin()) {
