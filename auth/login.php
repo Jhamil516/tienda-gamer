@@ -16,6 +16,7 @@ if (es_autenticado()) {
 }
 
 $error = '';
+$appeal_url = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $correo    = sanitizar_entrada($_POST['correo'] ?? '');
@@ -24,7 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $resultado = verificar_login($conn, $correo, $contraseña);
 
     if (isset($resultado['error'])) {
-        $error = $resultado['error'];
+        if ($resultado['error'] === 'baneado') {
+            $error = $resultado['mensaje'] ?? 'Tu cuenta ha sido desactivada.';
+            $appeal_url = BASE_URL . 'auth/apelar_baneo.php?correo=' . urlencode($correo);
+        } else {
+            $error = $resultado['error'];
+        }
     } else {
         $usuario = $resultado['usuario'];
 
@@ -74,7 +80,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p>Sube de nivel</p>
             </div>
             <?php if ($error): ?>
-            <div class="alert"><?php echo htmlspecialchars($error); ?></div>
+            <div class="alert"><?php echo htmlspecialchars($error);
+                if (!empty($appeal_url)): ?>
+                    <br><a href="<?php echo htmlspecialchars($appeal_url); ?>" class="text-white fw-bold">Apelar mi baneo</a>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
             <form method="POST">
                 <input type="email" class="form-control" name="correo" placeholder="Correo electrónico" required autocomplete="email">
