@@ -349,9 +349,9 @@ function calcular_total_carrito($conexion, $id_usuario) {
     $id_usuario = intval($id_usuario);
 
     $query = "SELECT SUM(c.cantidad * c.precio_unitario) as subtotal
-              FROM carrito c
-              JOIN productos p ON c.id_producto = p.id_producto
-              WHERE c.id_usuario = $id_usuario";
+                FROM carrito c
+                JOIN productos p ON c.id_producto = p.id_producto
+                WHERE c.id_usuario = $id_usuario";
     $result = $conexion->query($query);
     $subtotal = $result ? ($result->fetch_assoc()['subtotal'] ?? 0) : 0;
 
