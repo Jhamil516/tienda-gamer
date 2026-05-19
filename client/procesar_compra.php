@@ -93,6 +93,15 @@ try {
         }
     }
 
+    // Si hay un cupón aplicado en sesión, incrementar los usos de la promoción
+    $codigo_cupon_sesion = $_SESSION['codigo_cupon'] ?? '';
+    if (!empty($codigo_cupon_sesion)) {
+        $promocion_usada = obtener_promocion_por_codigo($conn, $codigo_cupon_sesion);
+        if ($promocion_usada) {
+            incrementar_usos_promocion($conn, $promocion_usada['id_promocion']);
+        }
+    }
+
     // Notificación de compra al cliente
     registrar_notificacion($conn, $id_usuario, 'Compra exitosa', "Tu orden $numero_venta fue registrada correctamente.", 'exito');
 

@@ -66,6 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->query("UPDATE productos SET stock = stock - $cantidad WHERE id_producto = $id_producto");
         }
 
+        // Incrementar usos de la promoción si se aplicó un cupón
+        if (!empty($codigo_cupon) && isset($promocion) && isset($promocion['id_promocion'])) {
+            incrementar_usos_promocion($conn, $promocion['id_promocion']);
+        }
+
         limpiar_carrito($conn, $id_usuario);
         header('Location: historial.php?compra_exitosa=1');
         exit;
