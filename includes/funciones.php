@@ -51,7 +51,9 @@ function registrar_usuario($conexion, $nombre, $correo, $contraseña, $habilitar
 
 function verificar_login($conexion, $correo, $contraseña) {
     $correo_sanitizado = sanitizar_sql($conexion, $correo);
-    $query = "SELECT id_usuario, nombre, correo, rol, contraseña FROM usuarios WHERE correo = '$correo_sanitizado' AND activo = 1";
+    
+    // Primero, buscar el usuario sin importar su estado
+    $query = "SELECT id_usuario, nombre, correo, rol, contraseña, activo FROM usuarios WHERE correo = '$correo_sanitizado'";
     $result = $conexion->query($query);
 
     if ($result->num_rows === 0) {
@@ -60,11 +62,21 @@ function verificar_login($conexion, $correo, $contraseña) {
 
     $usuario = $result->fetch_assoc();
 
-    if (password_verify($contraseña, $usuario['contraseña'])) {
-        return ['exito' => true, 'usuario' => $usuario];
-    } else {
+    // Verificar contraseña primero para no filtrar existencia de cuenta
+    if (!password_verify($contraseña, $usuario['contraseña'])) {
         return ['error' => 'Correo o contraseña incorrectos'];
     }
+
+    // Verificar si el usuario está baneado
+    if ($usuario['activo'] == 0) {
+        return [
+            'error' => 'baneado',
+            'mensaje' => 'Tu cuenta ha sido desactivada. Puedes apelar para que sea revisada nuevamente.',
+            'correo' => $usuario['correo']
+        ];
+    }
+
+    return ['exito' => true, 'usuario' => $usuario];
 }
 
 function es_2fa_habilitado($conexion, $id_usuario) {
@@ -100,6 +112,29 @@ function enviar_codigo_2fa($correo, $nombre, $codigo) {
         return true;
     } catch (Exception $e) {
         return 'Error SMTP: ' . $mail->ErrorInfo;
+    }
+}
+
+function enviar_correo($correo, $nombre, $asunto, $cuerpo_html, $cuerpo_texto = null) {
+    try {
+        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = MAIL_HOST;
+        $mail->SMTPAuth = MAIL_SMTP_AUTH;
+        $mail->Username = MAIL_USERNAME;
+        $mail->Password = MAIL_PASSWORD;
+        $mail->SMTPSecure = MAIL_ENCRYPTION;
+        $mail->Port = MAIL_PORT;
+        $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
+        $mail->addAddress($correo, $nombre ?: 'Administrador');
+        $mail->isHTML(true);
+        $mail->Subject = $asunto;
+        $mail->Body = $cuerpo_html;
+        $mail->AltBody = $cuerpo_texto ?? strip_tags($cuerpo_html);
+        $mail->send();
+        return true;
+    } catch (\PHPMailer\PHPMailer\Exception $e) {
+        return 'Error SMTP: ' . $e->getMessage();
     }
 }
 

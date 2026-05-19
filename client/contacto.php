@@ -1,6 +1,8 @@
 <?php
 session_start();
 require '../config/db.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../includes/funciones.php';
 
 $success = '';
 $errors = [];
@@ -42,7 +44,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $archivo = RUTA_UPLOADS . 'contact_messages.txt';
 
         if (file_put_contents($archivo, $registro, FILE_APPEND | LOCK_EX) !== false) {
+            $emails_enviados = [];
+            $email_error = '';
+
+            $admins = $conn->query("SELECT nombre, correo FROM usuarios WHERE rol = 'admin' AND activo = 1");
+            if ($admins && $admins->num_rows > 0) {
+                while ($admin = $admins->fetch_assoc()) {
+                    $emails_enviados[] = $admin['correo'];
+                }
+            } else {
+                $emails_enviados[] = EMAIL_TIENDA;
+            }
+
+            $emails_enviados = array_unique(array_filter($emails_enviados));
+            $asunto_email = "Nuevo mensaje de contacto: $asunto";
+            $cuerpo_html = "<p>Has recibido un nuevo mensaje desde el formulario de contacto.</p>" .
+                           "<p><strong>Nombre:</strong> " . htmlspecialchars($nombre) . "</p>" .
+                           "<p><strong>Correo:</strong> " . htmlspecialchars($correo) . "</p>" .
+                           "<p><strong>Teléfono:</strong> " . htmlspecialchars($telefono ?: 'No proporcionado') . "</p>" .
+                           "<p><strong>Asunto:</strong> " . htmlspecialchars($asunto) . "</p>" .
+                           "<p><strong>Mensaje:</strong><br>" . nl2br(htmlspecialchars($mensaje)) . "</p>";
+            $cuerpo_texto = "Has recibido un nuevo mensaje desde el formulario de contacto.\n\n" .
+                           "Nombre: $nombre\n" .
+                           "Correo: $correo\n" .
+                           "Teléfono: " . ($telefono ?: 'No proporcionado') . "\n" .
+                           "Asunto: $asunto\n\n" .
+                           "Mensaje:\n$mensaje";
+
+            foreach ($emails_enviados as $email_admin) {
+                $mail_result = enviar_correo(
+                    $email_admin,
+                    'Administrador',
+                    $asunto_email,
+                    $cuerpo_html,
+                    $cuerpo_texto
+                );
+                if ($mail_result !== true) {
+                    $email_error = $mail_result;
+                }
+            }
+
             $success = '✅ Gracias por contactarnos. Tu mensaje ha sido enviado correctamente. Te responderemos pronto.';
+            if ($email_error) {
+                $success .= ' No se pudo enviar la notificación por correo: ' . htmlspecialchars($email_error);
+            }
             $nombre = $correo = $asunto = $mensaje = $telefono = '';
         } else {
             $errors[] = 'No se pudo guardar el mensaje. Intenta de nuevo más tarde.';

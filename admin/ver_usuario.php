@@ -8,10 +8,23 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/funciones.php';
 require_once __DIR__ . '/admin_header.php';
 
+$mensaje_exito = '';
+$mensaje_error = '';
+
 if ($id > 0) {
     $result = $conn->query("SELECT * FROM usuarios WHERE id_usuario = $id");
     if ($result && $result->num_rows > 0) {
         $usuario = $result->fetch_assoc();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_activo') {
+            $nuevo_activo = $usuario['activo'] ? 0 : 1;
+            if ($conn->query("UPDATE usuarios SET activo = $nuevo_activo WHERE id_usuario = $id")) {
+                $usuario['activo'] = $nuevo_activo;
+                $mensaje_exito = $nuevo_activo ? 'Usuario activado correctamente.' : 'Usuario desactivado correctamente.';
+            } else {
+                $mensaje_error = 'No se pudo actualizar el estado del usuario. Intenta nuevamente.';
+            }
+        }
 
         $compras_result = $conn->query("SELECT * FROM ventas WHERE id_usuario = $id ORDER BY fecha_venta DESC");
         if ($compras_result) {
@@ -100,6 +113,18 @@ admin_render_header('Ver Usuario', 'Gestión de Usuarios', 'fas fa-users');
             <i class="fas fa-arrow-left"></i> Volver
         </a>
 
+        <?php if ($mensaje_error): ?>
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($mensaje_error); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($mensaje_exito): ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($mensaje_exito); ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Información del Usuario -->
         <div class="card">
             <div class="card-header">
@@ -152,9 +177,13 @@ admin_render_header('Ver Usuario', 'Gestión de Usuarios', 'fas fa-users');
                             <a href="editar_usuario.php?id=<?php echo $usuario['id_usuario']; ?>" class="btn btn-warning">
                                 <i class="fas fa-edit"></i> Editar
                             </a>
-                            <button class="btn btn-danger" onclick="desactivarUsuario()">
-                                <i class="fas fa-lock"></i> Desactivar
-                            </button>
+                            <form method="POST" class="d-inline">
+                                <input type="hidden" name="action" value="toggle_activo">
+                                <button type="submit" class="btn <?php echo $usuario['activo'] ? 'btn-danger' : 'btn-success'; ?>" onclick="return confirm('<?php echo $usuario['activo'] ? '¿Desactivar este usuario?' : '¿Activar este usuario?'; ?>')">
+                                    <i class="fas <?php echo $usuario['activo'] ? 'fa-lock' : 'fa-unlock'; ?>"></i>
+                                    <?php echo $usuario['activo'] ? 'Desactivar' : 'Activar'; ?>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -209,15 +238,4 @@ admin_render_header('Ver Usuario', 'Gestión de Usuarios', 'fas fa-users');
         </div>
     </div>
 
-    <script>
-        function editarUsuario() {
-            alert('Función de edición próximamente');
-        }
-
-        function desactivarUsuario() {
-            if (confirm('¿Desactivar este usuario?')) {
-                alert('Usuario desactivado');
-            }
-        }
-    </script>
 <?php admin_render_footer(); ?>
