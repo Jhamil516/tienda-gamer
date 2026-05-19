@@ -9,7 +9,7 @@ if (!es_admin()) {
 }
 
 $id = intval($_GET['id'] ?? 0);
-$producto = obtener_producto_por_id($conn, $id);
+$producto = obtener_producto_por_id_admin($conn, $id);
 
 if (!$producto) {
     header('Location: productos.php');
@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $exito = 'Producto actualizado correctamente' . (count($imagenes_subidas) > 0 ? ' con ' . count($imagenes_subidas) . ' imagen(es) nueva(s)' : '');
-                $producto = obtener_producto_por_id($conn, $id);
+                $producto = obtener_producto_por_id_admin($conn, $id);
                 
                 // Recargar imágenes
                 $result_img = $conn->query($query_img);

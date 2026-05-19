@@ -204,6 +204,13 @@ function obtener_producto_por_id($conexion, $id_producto) {
     return $result ? $result->fetch_assoc() : null;
 }
 
+function obtener_producto_por_id_admin($conexion, $id_producto) {
+    $id_producto = intval($id_producto);
+    $query = "SELECT p.*, c.nombre_categoria FROM productos p JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.id_producto = $id_producto";
+    $result = $conexion->query($query);
+    return $result ? $result->fetch_assoc() : null;
+}
+
 function inicializar_promociones($conexion) {
     // La tabla promociones ya debe existir en la base de datos
     return true;
